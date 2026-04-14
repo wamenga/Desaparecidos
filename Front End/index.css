@@ -1,0 +1,29 @@
+body{
+    margin: 0px;
+    height: 100vh;
+    width: 100wh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.conteiner{
+    height: 70%;
+    width: 80%;
+    margin: 0%;
+    background-color: aliceblue;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    justify-content: space-around;
+    flex-direction: row;
+    border-radius: 2%, 2%;
+    border: 0.5px solid aqua;
+}
+.formulario{
+   
+}
+.imagem{
+    height: 100%;
+    width: 30%;
+    background-color: red;
+}
