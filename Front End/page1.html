@@ -1,64 +1,274 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-ao">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>BusqueDesaparecidos Angola | Plataforma de Busca de Pessoas Desaparecidas</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="page1.css">
 </head>
 <body>
     <header>
         <nav>
+            <div class="logo-area">
+                <i class="fas fa-search-location logo-icon"></i>
+                <span class="logo-text">BusqueDesaparecidos</span>
+                <span class="logo-badge">ANGOLA</span>
+            </div>
             <ul>
-                <li><a href="">Início</a></li>
-                 <li><a href="">Denúciar</a></li>
-                  <li><a href="">Meus casos</a></li>
-                   <li><a href="">Admin</a></li>
+                <li><a href="#" id="homeLink"><i class="fas fa-home"></i> Início</a></li>
+                <li><a href="#" id="denunciarLink"><i class="fas fa-flag"></i> Denunciar</a></li>
+                <li><a href="#" id="meusCasosLink"><i class="fas fa-folder-open"></i> Meus Casos</a></li>
+                <li><a href="#" id="adminLink"><i class="fas fa-user-shield"></i> Admin</a></li>
             </ul>
-            <div class="user">Olá, João</div>
+            <div class="user" id="userNameDisplay">
+                <i class="fas fa-user-circle"></i> Olá, Usuário
+                <span class="notification-badge">
+                    <i class="fas fa-bell"></i>
+                    <span class="badge-count" id="notifCount">0</span>
+                </span>
+            </div>
         </nav>
     </header>
 
-    <section class="search">
-        <input type="text" placeholder="Digite o nome...">
-        <div class="filters">
-            <button>Todos</button>
-            <button>Em Inverstigação</button>
-            <button>Encontrado</button>
-            <button>Encerrado</button>
+    <!-- Barra de estatísticas -->
+    <div class="stats-cards">
+        <div class="stat-card">
+            <i class="fas fa-users stat-icon"></i>
+            <div class="stat-number" id="totalCasos">47</div>
+            <div>Total de Casos</div>
+        </div>
+        <div class="stat-card">
+            <i class="fas fa-search stat-icon"></i>
+            <div class="stat-number" id="investigacaoCount">23</div>
+            <div>Em Investigação</div>
+        </div>
+        <div class="stat-card">
+            <i class="fas fa-check-circle stat-icon"></i>
+            <div class="stat-number" id="encontradosCount">18</div>
+            <div>Encontrados</div>
+        </div>
+        <div class="stat-card">
+            <i class="fas fa-hand-peace stat-icon"></i>
+            <div class="stat-number" id="ajudasCount">156</div>
+            <div>Denúncias Feitas</div>
+        </div>
+    </div>
+
+    <!-- Seção de Busca -->
+    <section class="search-section">
+        <div class="search-container">
+            <div class="search-box">
+                <i class="fas fa-search search-icon"></i>
+                <input type="text" id="searchInput" placeholder="Digite o nome da pessoa desaparecida em Angola...">
+                <button id="searchBtn"><i class="fas fa-search"></i> Buscar</button>
+                <button id="voiceSearchBtn"><i class="fas fa-microphone"></i></button>
+            </div>
+            <div class="filters" id="filterContainer">
+                <button class="filter-btn active" data-filter="all"><i class="fas fa-list"></i> Todos</button>
+                <button class="filter-btn" data-filter="investigacao"><i class="fas fa-search"></i> Em Investigação</button>
+                <button class="filter-btn" data-filter="encontrado"><i class="fas fa-check"></i> Encontrado</button>
+                <button class="filter-btn" data-filter="encerrado"><i class="fas fa-archive"></i> Encerrado</button>
+            </div>
+            <div class="progress-bar" id="progressBar" style="display: none;">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
         </div>
     </section>
 
-    <section class="destaque">
-  <img src="ana.jpg" alt="Ana Souza">
+    <!-- Destaque Principal -->
+    <section class="highlight">
+        <div class="section-title">
+            <i class="fas fa-star"></i> Destaque da Semana
+            <button id="saveHighlightBtn" class="favorite-btn"><i class="far fa-star"></i></button>
+        </div>
+        <div class="highlight-card">
+            <div class="highlight-img">
+                <img src="https://randomuser.me/api/portraits/women/68.jpg" alt="Ana Souza" id="destaqueImg">
+            </div>
+            <div class="highlight-info">
+                <h2 id="destaqueNome">Ana Souza</h2>
+                <div class="detail-row"><i class="fas fa-calendar-alt"></i> Desaparecida desde: <strong id="destaqueData">15/04/2023</strong></div>
+                <div class="detail-row"><i class="fas fa-map-marker-alt"></i> Localização: <strong id="destaqueLocal">Luanda, Angola - Bairro Popular</strong></div>
+                <div><span class="status-badge status-investigacao" id="destaqueStatus"><i class="fas fa-search"></i> EM INVESTIGAÇÃO</span></div>
+                <p style="margin: 15px 0; color: #555;" id="destaqueDesc">Ana foi vista pela última vez usando jaqueta azul na região do Mercado do Roque. Qualquer informação, entre em contato com as autoridades.</p>
+                <button class="btn-primary" id="denunciaBtn"><i class="fas fa-flag"></i> DENÚNCIA EM INVESTIGAÇÃO</button>
+                <button class="btn-primary map-btn" id="verMapaBtn"><i class="fas fa-map"></i> Ver no Mapa</button>
+                <div class="share-buttons">
+                    <button class="share-btn share-whatsapp" onclick="compartilharWhatsApp()"><i class="fab fa-whatsapp"></i> WhatsApp</button>
+                    <button class="share-btn share-twitter" onclick="compartilharTwitter()"><i class="fab fa-twitter"></i> Twitter</button>
+                    <button class="share-btn share-facebook" onclick="compartilharFacebook()"><i class="fab fa-facebook"></i> Facebook</button>
+                </div>
+            </div>
+        </div>
+    </section>
 
-  <div class="info">
-    <h2>Ana Souza</h2>
-    <p>Desaparecida desde: 15/04/2023</p>
-    <p>Localização: São Paulo, SP</p>
-    <span class="status">Em investigação</span>
+    <!-- Mapa Interativo de Angola -->
+    <div class="map-container">
+        <div class="map-title">
+            <i class="fas fa-map-marked-alt"></i> 
+            <strong>Localização dos Desaparecidos em Angola - 18 Províncias</strong>
+            <div class="map-controls">
+                <button id="zoomLuanda" class="map-control-btn"><i class="fas fa-city"></i> Luanda</button>
+                <button id="zoomBenguela" class="map-control-btn"><i class="fas fa-city"></i> Benguela</button>
+                <button id="zoomHuila" class="map-control-btn"><i class="fas fa-city"></i> Huíla</button>
+                <button id="zoomAll" class="map-control-btn"><i class="fas fa-globe-africa"></i> Todas</button>
+                <button id="refreshMapBtn" class="map-control-btn"><i class="fas fa-sync-alt"></i></button>
+            </div>
+        </div>
+        <div id="mapid"></div>
+        <div class="map-legend">
+            <div class="legend-item"><div class="legend-color red"></div> Em Investigação</div>
+            <div class="legend-item"><div class="legend-color green"></div> Encontrado</div>
+            <div class="legend-item"><div class="legend-color gray"></div> Encerrado</div>
+            <div class="legend-item"><div class="legend-color blue"></div> Capital de Província</div>
+        </div>
+    </div>
 
-    <button>Saiba Mais</button>
-  </div>
-</section>
+    <!-- Casos Recentes -->
+    <section class="casos-grid">
+        <div class="section-title">
+            <i class="fas fa-clipboard-list"></i> Casos Recentes em Angola
+            <button id="sortByDateBtn" class="sort-btn"><i class="fas fa-sort-amount-down"></i> Ordenar por Data</button>
+        </div>
+        <div class="cards-grid" id="cardsContainer"></div>
+        <button id="loadMoreBtn" class="load-more-btn"><i class="fas fa-plus-circle"></i> Carregar Mais</button>
+    </section>
 
-<section class="casos">
-  <article class="card">
-    <img src="carlos.jpg">
-    <h3>Carlos Pereira</h3>
-    <p>Desaparecido desde 10/10/2022</p>
-    <span class="status red">Em investigação</span>
-    <button>Ver detalhes</button>
-  </article>
-</section>
+    <!-- Botões de Ação -->
+    <div class="actions-bar">
+        <button class="btn-report" id="reportBtn"><i class="fas fa-plus-circle"></i> Reportar Desaparecimento</button>
+        <button class="btn-view" id="viewAllBtn"><i class="fas fa-eye"></i> Ver Todos os Casos</button>
+        <button class="btn-darkmode" id="darkModeBtn"><i class="fas fa-moon"></i> Modo Escuro</button>
+    </div>
 
-<section class="actions">
-  <button class="report">Reportar Desaparecimento</button>
-  <button class="view-all">Ver Todos os Casos</button>
-</section>
+    <!-- Rodapé com Marca -->
+    <footer>
+        <div class="footer-content">
+            <div class="footer-brand">
+                <i class="fas fa-search-location"></i>
+                <span>BusqueDesaparecidos Angola</span>
+            </div>
+            <div class="footer-signature">
+                Desenvolvido por <strong>Próspero Wamenga</strong> | &copy; 2026 Todos os direitos reservados
+            </div>
+            <div class="footer-links">
+                <a href="mailto:pwamenga@gmail.com"><i class="fas fa-envelope"></i> pwamenga@gmail.com</a>
+                <a href="https://www.linkedin.com/in/próspero-wamenga" target="_blank"><i class="fab fa-linkedin"></i> Próspero Wamenga</a>
+            </div>
+        </div>
+    </footer>
 
-<footer>
-  <p>© 2026 BusqueDesaparecidos</p>
-</footer>
+    <!-- Botão flutuante de ajuda -->
+    <div class="floating-btn" id="helpBtn">
+        <i class="fas fa-question"></i>
+    </div>
+
+    <!-- Toast de notificação -->
+    <div class="toast" id="toast">
+        <i class="fas fa-check-circle"></i>
+        <span id="toastMessage">Ação realizada com sucesso!</span>
+    </div>
+
+    <!-- Modal de Denúncia -->
+    <div class="modal" id="denunciaModal">
+        <div class="modal-content">
+            <span class="modal-close" onclick="fecharModal('denunciaModal')">&times;</span>
+            <h2><i class="fas fa-flag"></i> Fazer Denúncia - Angola</h2>
+            <form id="denunciaForm">
+                <div class="form-group">
+                    <label><i class="fas fa-user"></i> Nome do Desaparecido *</label>
+                    <input type="text" id="denunciaNome" required placeholder="Ex: João António">
+                </div>
+                <div class="form-group">
+                    <label><i class="fas fa-id-card"></i> Seu nome *</label>
+                    <input type="text" id="denunciaSeuNome" required>
+                </div>
+                <div class="form-group">
+                    <label><i class="fas fa-phone"></i> Seu contato *</label>
+                    <input type="text" id="denunciaContato" required placeholder="Telefone ou email">
+                </div>
+                <div class="form-group">
+                    <label><i class="fas fa-map-marker-alt"></i> Província do desaparecimento *</label>
+                    <select id="denunciaProvincia" required>
+                        <option value="">Selecione a Província</option>
+                        <option value="Luanda">Luanda</option>
+                        <option value="Benguela">Benguela</option>
+                        <option value="Huíla">Huíla</option>
+                        <option value="Bié">Bié</option>
+                        <option value="Moxico">Moxico</option>
+                        <option value="Cuando Cubango">Cuando Cubango</option>
+                        <option value="Zaire">Zaire</option>
+                        <option value="Uíge">Uíge</option>
+                        <option value="Cuanza Norte">Cuanza Norte</option>
+                        <option value="Cuanza Sul">Cuanza Sul</option>
+                        <option value="Namibe">Namibe</option>
+                        <option value="Cabinda">Cabinda</option>
+                        <option value="Lunda Norte">Lunda Norte</option>
+                        <option value="Lunda Sul">Lunda Sul</option>
+                        <option value="Malange">Malange</option>
+                        <option value="Huambo">Huambo</option>
+                        <option value="Bengo">Bengo</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label><i class="fas fa-map-marker-alt"></i> Local específico *</label>
+                    <input type="text" id="denunciaLocal" required placeholder="Ex: Bairro, Rua, Ponto de referência">
+                </div>
+                <div class="form-group">
+                    <label><i class="fas fa-calendar"></i> Data do desaparecimento *</label>
+                    <input type="date" id="denunciaData" required>
+                </div>
+                <div class="form-group">
+                    <label><i class="fas fa-info-circle"></i> Informações adicionais *</label>
+                    <textarea rows="4" id="denunciaInfo" placeholder="Descreva roupas, características físicas, local exato, etc..." required></textarea>
+                </div>
+                <div class="form-group">
+                    <label><i class="fas fa-image"></i> Anexar imagem (URL)</label>
+                    <input type="url" id="denunciaImagem" placeholder="https://...">
+                </div>
+                <button type="submit" class="btn-submit"><i class="fas fa-paper-plane"></i> Enviar Denúncia</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal de Detalhes do Caso -->
+    <div class="modal" id="detalhesModal">
+        <div class="modal-content">
+            <span class="modal-close" onclick="fecharModal('detalhesModal')">&times;</span>
+            <div id="detalhesContent"></div>
+            <div class="comment-section">
+                <h4><i class="fas fa-comments"></i> Comentários</h4>
+                <div id="commentsList"></div>
+                <div class="comment-input">
+                    <input type="text" id="newComment" placeholder="Deixe um comentário...">
+                    <button onclick="adicionarComentario()"><i class="fas fa-paper-plane"></i> Enviar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Ajuda -->
+    <div class="modal" id="helpModal">
+        <div class="modal-content">
+            <span class="modal-close" onclick="fecharModal('helpModal')">&times;</span>
+            <h2><i class="fas fa-life-ring"></i> Central de Ajuda - Angola</h2>
+            <p><strong>Como usar a plataforma:</strong></p>
+            <ul style="margin: 15px 0 0 20px;">
+                <li><i class="fas fa-search"></i> Use a barra de busca para encontrar pessoas pelo nome</li>
+                <li><i class="fas fa-filter"></i> Filtre casos por status (Investigação/Encontrado/Encerrado)</li>
+                <li><i class="fas fa-map-marker-alt"></i> Clique nos marcadores do mapa para ver detalhes da localização</li>
+                <li><i class="fas fa-flag"></i> Use o botão "Reportar Desaparecimento" para adicionar um novo caso</li>
+                <li><i class="fas fa-star"></i> Salve casos favoritos clicando na estrela</li>
+                <li><i class="fas fa-comment"></i> Comente em casos para ajudar com informações</li>
+                <li><i class="fas fa-share-alt"></i> Compartilhe casos nas redes sociais</li>
+            </ul>
+            <p style="margin-top:20px;"><strong><i class="fas fa-phone-alt"></i> Emergência Angola:</strong> Disque 111 (Polícia Nacional) ou 113 (Proteção Civil)</p>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="script.js"></script>
 </body>
 </html>

@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="pt-ao">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin | BusqueDesaparecidos Angola</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="admin.css">
+</head>
+<body>
+    <header>
+        <nav>
+            <div class="logo-area">
+                <i class="fas fa-shield-alt"></i>
+                <span>Painel Administrativo</span>
+                <span class="admin-badge">ADMIN</span>
+            </div>
+            <div class="user-info">
+                <i class="fas fa-user-cog"></i>
+                <span id="adminName">Administrador</span>
+                <button id="logoutBtn" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Sair</button>
+            </div>
+        </nav>
+    </header>
+
+    <div class="dashboard">
+        <div class="sidebar">
+            <ul>
+                <li class="active" data-tab="dashboard"><i class="fas fa-tachometer-alt"></i> Dashboard</li>
+                <li data-tab="casos"><i class="fas fa-folder-open"></i> Gerenciar Casos</li>
+                <li data-tab="denuncias"><i class="fas fa-flag"></i> Denúncias</li>
+                <li data-tab="usuarios"><i class="fas fa-users"></i> Usuários</li>
+                <li data-tab="logs"><i class="fas fa-history"></i> Logs do Sistema</li>
+            </ul>
+        </div>
+
+        <div class="main-content">
+            <!-- Dashboard -->
+            <div id="tabDashboard" class="tab-content active">
+                <h2><i class="fas fa-chart-line"></i> Dashboard</h2>
+                <div class="stats-grid" id="statsGrid"></div>
+                <div class="chart-container">
+                    <h3>Casos por Status</h3>
+                    <div id="statusChart" class="chart-bars"></div>
+                </div>
+            </div>
+
+            <!-- Gerenciar Casos -->
+            <div id="tabCasos" class="tab-content">
+                <h2><i class="fas fa-folder-open"></i> Gerenciar Casos</h2>
+                <div class="search-bar">
+                    <input type="text" id="searchCasos" placeholder="Buscar caso...">
+                </div>
+                <div id="casosList" class="admin-list"></div>
+            </div>
+
+            <!-- Denúncias -->
+            <div id="tabDenuncias" class="tab-content">
+                <h2><i class="fas fa-flag"></i> Denúncias Pendentes</h2>
+                <div id="denunciasList" class="admin-list"></div>
+            </div>
+
+            <!-- Usuários -->
+            <div id="tabUsuarios" class="tab-content">
+                <h2><i class="fas fa-users"></i> Usuários Cadastrados</h2>
+                <div id="usuariosList" class="admin-list"></div>
+            </div>
+
+            <!-- Logs -->
+            <div id="tabLogs" class="tab-content">
+                <h2><i class="fas fa-history"></i> Logs do Sistema</h2>
+                <div id="logsList" class="logs-list"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost/projeto-desaparecidos/backend/';
+
+        // Verificar se é admin
+        if (localStorage.getItem('userTipo') !== 'admin') {
+            alert('Acesso negado! Área restrita para administradores.');
+            window.location.href = 'index.html';
+        }
+
+        document.getElementById('adminName').innerHTML = localStorage.getItem('userName');
+
+        // Navegação entre abas
+        document.querySelectorAll('.sidebar li').forEach(item => {
+            item.addEventListener('click', function() {
+                document.querySelectorAll('.sidebar li').forEach(l => l.classList.remove('active'));
+                this.classList.add('active');
+                
+                const tab = this.getAttribute('data-tab');
+                document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+                document.getElementById(`tab${tab.charAt(0).toUpperCase() + tab.slice(1)}`).classList.add('active');
+                
+                if (tab === 'dashboard') carregarDashboard();
+                if (tab === 'casos') carregarCasos();
+                if (tab === 'denuncias') carregarDenuncias();
+                if (tab === 'usuarios') carregarUsuarios();
+                if (tab === 'logs') carregarLogs();
+            });
+        });
+
+        // Carregar Dashboard
+        async function carregarDashboard() {
+            const response = await fetch(API_URL + 'admin.php?stats=1');
+            const stats = await response.json();
+            
+            const grid = document.getElementById('statsGrid');
+            grid.innerHTML = `
+                <div class="stat-card"><div class="stat-number">${stats.total_casos}</div><div>Total de Casos</div></div>
+                <div class="stat-card"><div class="stat-number">${stats.total_usuarios}</div><div>Usuários</div></div>
+                <div class="stat-card"><div class="stat-number">${stats.total_comentarios}</div><div>Comentários</div></div>
+                <div class="stat-card"><div class="stat-number">${stats.denuncias_pendentes}</div><div>Denúncias Pendentes</div></div>
+            `;
+            
+            // Gráfico simples
+            const chartDiv = document.getElementById('statusChart');
+            chartDiv.innerHTML = '';
+            stats.por_status.forEach(s => {
+                let cor = s.status === 'investigacao' ? '#ff9800' : (s.status === 'encontrado' ? '#4caf50' : '#9e9e9e');
+                chartDiv.innerHTML += `
+                    <div class="chart-bar">
+                        <div class="chart-label">${s.status}</div>
+                        <div class="chart-bar-fill" style="width: ${s.total * 10}%; background: ${cor};"></div>
+                        <div class="chart-value">${s.total}</div>
+                    </div>
+                `;
+            });
+        }
+
+        // Carregar Casos
+        async function carregarCasos() {
+            const response = await fetch(API_URL + 'casos.php');
+            const casos = await response.json();
+            
+            const list = document.getElementById('casosList');
+            list.innerHTML = casos.map(caso => `
+                <div class="admin-list-item">
+                    <div>
+                        <strong>${caso.nome}</strong><br>
+                        <small>${caso.local} | ${caso.status}</small>
+                    </div>
+                    <div>
+                        <select onchange="atualizarStatus(${caso.id}, this.value)" class="status-select">
+                            <option value="investigacao" ${caso.status === 'investigacao' ? 'selected' : ''}>Em Investigação</option>
+                            <option value="encontrado" ${caso.status === 'encontrado' ? 'selected' : ''}>Encontrado</option>
+                            <option value="encerrado" ${caso.status === 'encerrado' ? 'selected' : ''}>Encerrado</option>
+                        </select>
+                        <button onclick="excluirCaso(${caso.id})" class="btn-delete"><i class="fas fa-trash"></i></button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function atualizarStatus(id, status) {
+            await fetch(API_URL + 'casos.php', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: `id=${id}&status=${status}`
+            });
+            alert('Status atualizado!');
+            carregarCasos();
+        }
+
+        async function excluirCaso(id) {
+            if (confirm('Tem certeza que deseja excluir este caso?')) {
+                await fetch(API_URL + 'casos.php', {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: `id=${id}`
+                });
+                alert('Caso excluído!');
+                carregarCasos();
+            }
+        }
+
+        // Carregar Denúncias
+        async function carregarDenuncias() {
+            const response = await fetch(API_URL + 'admin.php?denuncias=1');
+            const denuncias = await response.json();
+            
+            const list = document.getElementById('denunciasList');
+            if (denuncias.length === 0) {
+                list.innerHTML = '<p class="empty">Nenhuma denúncia pendente</p>';
+                return;
+            }
+            
+            list.innerHTML = denuncias.map(d => `
+                <div class="admin-list-item">
+                    <div>
+                        <strong>${d.nome_desaparecido}</strong><br>
+                        <small>${d.provincia} | ${d.data_denuncia}</small>
+                        <p>${d.informacoes.substring(0, 100)}...</p>
+                    </div>
+                    <div>
+                        <button onclick="aprovarDenuncia(${d.id})" class="btn-approve"><i class="fas fa-check"></i> Aprovar</button>
+                        <button onclick="recusarDenuncia(${d.id})" class="btn-reject"><i class="fas fa-times"></i> Recusar</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function aprovarDenuncia(id) {
+            await fetch(API_URL + 'admin.php?denuncia=1', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id, acao: 'aprovar' })
+            });
+            alert('Denúncia aprovada e publicada!');
+            carregarDenuncias();
+        }
+
+        async function recusarDenuncia(id) {
+            await fetch(API_URL + 'admin.php?denuncia=1', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id, acao: 'recusar' })
+            });
+            alert('Denúncia recusada!');
+            carregarDenuncias();
+        }
+
+        // Carregar Usuários
+        async function carregarUsuarios() {
+            const response = await fetch(API_URL + 'admin.php?usuarios=1');
+            const usuarios = await response.json();
+            
+            const list = document.getElementById('usuariosList');
+            list.innerHTML = usuarios.map(u => `
+                <div class="admin-list-item">
+                    <div>
+                        <strong>${u.nome}</strong><br>
+                        <small>${u.email} | ${u.tipo} | ${u.status}</small>
+                    </div>
+                    <div>
+                        <button onclick="bloquearUsuario(${u.id}, '${u.status}')" class="btn-block">
+                            ${u.status === 'ativo' ? '<i class="fas fa-ban"></i> Bloquear' : '<i class="fas fa-check"></i> Desbloquear'}
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function bloquearUsuario(id, statusAtual) {
+            const novoStatus = statusAtual === 'ativo' ? 'bloqueado' : 'ativo';
+            await fetch(API_URL + 'admin.php?bloquear=1', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id, status: novoStatus })
+            });
+            alert(`Usuário ${novoStatus === 'bloqueado' ? 'bloqueado' : 'desbloqueado'}!`);
+            carregarUsuarios();
+        }
+
+        // Carregar Logs
+        async function carregarLogs() {
+            const response = await fetch(API_URL + 'admin.php?logs=1');
+            const logs = await response.json();
+            
+            const list = document.getElementById('logsList');
+            list.innerHTML = logs.map(log => `
+                <div class="log-item">
+                    <div class="log-icon"><i class="fas ${log.acao === 'login' ? 'fa-sign-in-alt' : 'fa-edit'}"></i></div>
+                    <div class="log-details">
+                        <strong>${log.usuario_nome || 'Sistema'}</strong>
+                        <span>${log.acao}</span>
+                        <small>${log.detalhes}</small>
+                    </div>
+                    <div class="log-date">${new Date(log.data).toLocaleString()}</div>
+                </div>
+            `).join('');
+        }
+
+        // Logout
+        document.getElementById('logoutBtn').addEventListener('click', () => {
+            localStorage.clear();
+            window.location.href = 'index.html';
+        });
+
+        // Carregar dashboard inicial
+        carregarDashboard();
+    </script>
+</body>
+</html>

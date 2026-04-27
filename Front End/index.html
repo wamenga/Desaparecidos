@@ -1,31 +1,243 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-ao">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>BusqueDesaparecidos Angola - Login</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="index.css">
-    <title>Document</title>
 </head>
 <body>
-    <div class="conteiner">
-
-            <form action="" class="formulario">
-
-                <Input class="name" placeholder="Insira o seu nome" type="text"></Input>
-                <Input class="password" placeholder="Insira tua password" type="text"></Input>
-                <br>
-                <button type="button">Entrar</button>
-                <a href="cadastro.html">Não tens uma conta? Cadastra se aqui!</a>
-
-            </form>
-            <div class="imagem">
-                <img src="" alt="">
+    <div class="login-wrapper">
+        <div class="login-container">
+            <!-- Lado Esquerdo - Formulário -->
+            <div class="login-form-side">
+                <div class="logo-area">
+                    <i class="fas fa-search-location logo-icon"></i>
+                    <h1>BusqueDesaparecidos</h1>
+                    <span class="angola-badge">ANGOLA</span>
+                </div>
+                <p class="subtitle">Aceda com suas credenciais</p>
+                
+                <form id="loginForm">
+                    <div class="input-group" id="emailGroup">
+                        <label><i class="fas fa-envelope"></i> E-mail</label>
+                        <input type="email" id="email" placeholder="seu@email.ao" autocomplete="off">
+                        <div class="error-message"><i class="fas fa-exclamation-circle"></i> Digite um e-mail válido</div>
+                    </div>
+                    
+                    <div class="input-group" id="passwordGroup">
+                        <label><i class="fas fa-lock"></i> Senha</label>
+                        <input type="password" id="password" placeholder="••••••••">
+                        <div class="error-message"><i class="fas fa-exclamation-circle"></i> A senha deve ter pelo menos 6 caracteres</div>
+                    </div>
+                    
+                    <button type="submit" class="btn-login" id="loginBtn">
+                        <i class="fas fa-sign-in-alt"></i> Entrar
+                    </button>
+                </form>
+                
+                <p class="register-link">
+                    Não tem uma conta? <a href="cadastro.html">Cadastre-se</a>
+                </p>
             </div>
 
-        
+            <!-- Lado Direito - Imagens de Destaque -->
+            <div class="login-images-side">
+                <div class="image-card">
+                    <img src="https://images.unsplash.com/photo-1582213782179-e0d53f98f2ca?w=500&h=300&fit=crop" alt="Manifestação" class="image-card-img">
+                    <div class="image-card-title">Campanha de Conscientização</div>
+                    <div class="image-card-desc">Milhares de pessoas unidas pela busca de desaparecidos em Angola</div>
+                    <span class="image-badge"><i class="fas fa-users"></i> +5.000 participantes</span>
+                </div>
 
-   
+                <div class="image-card">
+                    <img src="https://images.unsplash.com/photo-1532629345422-7515f3d16d6c?w=500&h=300&fit=crop" alt="Reencontro" class="image-card-img">
+                    <div class="image-card-title">Reencontro de Famílias</div>
+                    <div class="image-card-desc">Mais de 150 famílias reencontradas graças à plataforma</div>
+                    <span class="image-badge"><i class="fas fa-heart"></i> 150+ casos resolvidos</span>
+                </div>
+
+                <div class="image-card">
+                    <img src="https://images.unsplash.com/photo-1593113630400-ea4288922497?w=500&h=300&fit=crop" alt="Ação Social" class="image-card-img">
+                    <div class="image-card-title">Ações de Busca</div>
+                    <div class="image-card-desc">Equipes de voluntários nas ruas de Luanda, Benguela e Huíla</div>
+                    <span class="image-badge"><i class="fas fa-map-marked-alt"></i> 18 províncias atendidas</span>
+                </div>
+            </div>
+        </div>
     </div>
 
+    <!-- Toast de notificação -->
+    <div class="toast-notification" id="toast">
+        <i class="fas fa-info-circle"></i>
+        <span id="toastMessage">Mensagem</span>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost/projeto-desaparecidos/backend/';
+
+        // Função para mostrar toast
+        function showToast(message, type = 'error') {
+            const toast = document.getElementById('toast');
+            const toastMessage = document.getElementById('toastMessage');
+            toastMessage.innerHTML = message;
+            toast.className = 'toast-notification show ' + type;
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 4000);
+        }
+
+        // Efeito ripple no botão
+        function createRipple(event) {
+            const button = event.currentTarget;
+            const ripple = document.createElement('span');
+            const rect = button.getBoundingClientRect();
+            const size = Math.max(rect.width, rect.height);
+            const x = event.clientX - rect.left - size / 2;
+            const y = event.clientY - rect.top - size / 2;
+            
+            ripple.style.width = ripple.style.height = `${size}px`;
+            ripple.style.left = `${x}px`;
+            ripple.style.top = `${y}px`;
+            ripple.classList.add('ripple');
+            
+            button.appendChild(ripple);
+            setTimeout(() => ripple.remove(), 600);
+        }
+
+        // Validação em tempo real do email
+        const emailInput = document.getElementById('email');
+        const emailGroup = document.getElementById('emailGroup');
+        
+        emailInput.addEventListener('input', function() {
+            const email = this.value;
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            
+            if (email === '') {
+                emailGroup.classList.remove('error', 'success');
+            } else if (!emailRegex.test(email)) {
+                emailGroup.classList.add('error');
+                emailGroup.classList.remove('success');
+            } else {
+                emailGroup.classList.add('success');
+                emailGroup.classList.remove('error');
+            }
+        });
+
+        // Validação em tempo real da senha
+        const passwordInput = document.getElementById('password');
+        const passwordGroup = document.getElementById('passwordGroup');
+        
+        passwordInput.addEventListener('input', function() {
+            const senha = this.value;
+            
+            if (senha === '') {
+                passwordGroup.classList.remove('error', 'success');
+            } else if (senha.length < 6) {
+                passwordGroup.classList.add('error');
+                passwordGroup.classList.remove('success');
+            } else {
+                passwordGroup.classList.add('success');
+                passwordGroup.classList.remove('error');
+            }
+        });
+
+        // Submit do formulário
+        const loginForm = document.getElementById('loginForm');
+        const loginBtn = document.getElementById('loginBtn');
+
+        loginForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const email = emailInput.value.trim();
+            const password = passwordInput.value;
+            
+            // Validação dos campos
+            let isValid = true;
+            
+            if (!email) {
+                emailGroup.classList.add('error');
+                isValid = false;
+            }
+            
+            if (!password) {
+                passwordGroup.classList.add('error');
+                isValid = false;
+            }
+            
+            if (!isValid) {
+                showToast('Por favor, preencha todos os campos', 'error');
+                return;
+            }
+            
+            // Validar formato do email
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) {
+                emailGroup.classList.add('error');
+                showToast('Digite um e-mail válido', 'error');
+                return;
+            }
+            
+            // Validar tamanho da senha
+            if (password.length < 6) {
+                passwordGroup.classList.add('error');
+                showToast('A senha deve ter pelo menos 6 caracteres', 'error');
+                return;
+            }
+            
+            // Mostrar loading no botão
+            loginBtn.classList.add('loading');
+            const originalText = loginBtn.innerHTML;
+            loginBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Entrando...';
+            loginBtn.disabled = true;
+            
+            try {
+                const response = await fetch(API_URL + 'login.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email, senha: password })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Salvar dados do usuário
+                    localStorage.setItem('user_id', data.usuario.id);
+                    localStorage.setItem('userName', data.usuario.nome.split(' ')[0]);
+                    localStorage.setItem('userEmail', data.usuario.email);
+                    localStorage.setItem('userTipo', data.tipo);
+                    localStorage.setItem('userProvincia', data.usuario.provincia || '');
+                    
+                    showToast(`Bem-vindo de volta, ${data.usuario.nome.split(' ')[0]}!`, 'success');
+                    
+                    setTimeout(() => {
+                        if (data.tipo === 'admin') {
+                            window.location.href = 'admin-panel.html';
+                        } else {
+                            window.location.href = 'page1.html';
+                        }
+                    }, 1000);
+                } else {
+                    showToast(data.erro || 'Email ou senha inválidos', 'error');
+                    passwordGroup.classList.add('error');
+                    loginBtn.classList.remove('loading');
+                    loginBtn.innerHTML = originalText;
+                    loginBtn.disabled = false;
+                }
+            } catch (error) {
+                console.error('Erro:', error);
+                showToast('Erro de conexão com o servidor. Verifique se o backend está rodando.', 'error');
+                loginBtn.classList.remove('loading');
+                loginBtn.innerHTML = originalText;
+                loginBtn.disabled = false;
+            }
+        });
+
+        // Adicionar efeito ripple ao botão
+        loginBtn.addEventListener('click', createRipple);
+    </script>
 </body>
 </html>
